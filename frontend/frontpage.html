@@ -1,1 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Time Capsule</title>
+    <style>
+        /* Basic Styling - Customize as needed */
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh; /* Ensure full viewport height */
+        }
 
+        nav {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px; /* Add some spacing between links */
+        }
+
+        main {
+            padding: 20px;
+            flex: 1; /* Allow main content to expand */
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Styles for forms, buttons, etc. (add as needed) */
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="date"],
+        textarea {
+            width: calc(100% - 12px);
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .error-message {
+            color: red;
+            margin-top: 10px;
+        }
+
+        /* Add more styles as needed */
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="/">Digital Time Capsule</a>
+    <div>
+        <a href="/capsules">My Capsules</a>
+        <a href="/create">Create Capsule</a>
+        <a href="/profile">Profile</a>
+        <a href="/logout">Logout</a> </div>
+</nav>
+
+<main>
+    <div id="content" class="container">
+        </div>
+</main>
+
+
+<script srcn = backend.py>
+    const contentDiv = document.getElementById('content');
+
+    function loadPage(page) {
+        fetch(/pages/${page}.html) // Fetch the HTML snippet
+            .then(response => response.text())
+            .then(html => {
+                contentDiv.innerHTML = html; // Set the content
+
+                // Attach event listeners or perform other JS operations after the content is loaded
+                if (page === 'signup' || page === 'login') {
+                    attachAuthHandlers();
+                } else if (page === 'create') {
+                    attachCreateCapsuleHandler();
+                } // Add more page-specific JS as needed
+            })
+            .catch(error => {
+                console.error('Error loading page:', error);
+                contentDiv.innerHTML = '<p>Error loading page.</p>';
+            });
+    }
+
+
+    function attachAuthHandlers() {
+        const form = document.querySelector('form');
+        if (form) {
+          form.addEventListener('submit', (event) => {
+            event.preventDefault(); // Prevent default form submission
+            const isSignup = form.id === 'signupForm'; // Check if it's the signup form
+
+             const formData = new FormData(form);
+
+            const url = isSignup ? '/api/signup' : '/api/login';
+
+            fetch(url, {
+              method: 'POST',
+              body: formData, // Send the FormData object
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                if (isSignup) {
+                  alert("Signup successful! Please login.");
+                  loadPage('login'); // Redirect to login page
+                } else {
+                  localStorage.setItem('token', data.token); // Store the token
+                  window.location.href = '/dashboard'; // Redirect to dashboard
+                }
+              } else {
+                const errorDiv = document.getElementById(isSignup ? 'signup-error' : 'login-error');
+                if (errorDiv) {
+                    errorDiv.textContent = data.message || "An error occurred.";
+                }
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              const errorDiv = document.getElementById(isSignup ? 'signup-error' : 'login-error');
+              if (errorDiv) {
+                errorDiv.textContent = "An error occurred.";
+              }
+            });
+          });
+        }
+      }
+
+        function attachCreateCapsuleHandler() {
+            const form = document.getElementById('createCapsuleForm');
+            if (form) {
+                form.addEventListener('submit', (event) => {
+                    event.preventDefault();
+
+                    const formData = new FormData(form);
+
+                    fetch('/api/capsules', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert("Capsule created successfully!");
+                            form.reset();
+                        } else {
+                            document.getElementById('error-message').textContent = data.message || "Failed to create capsule.";
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        document.getElementById('error-message').textContent = "An error occurred.";
+                    });
+                });
+            }
+        }
+
+
+    // Initial page load (e.g., load the home page)
+    loadPage('home'); // You'll need a home.html file
+
+    // Example of how to handle navigation clicks (using event delegation)
+    document.addEventListener('click', (event) => {
+        if (event.target.tagName === 'A' && event.target.getAttribute('href').startsWith('/')) {
+            event.preventDefault();
+            const page = event.target.getAttribute('href').substring(1); // Extract page name
+            loadPage(page);
+        }
+    });
+
+</script>
+
+</body>
+</html>
